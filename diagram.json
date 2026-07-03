@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "author": "Alunggu Simatupang",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-pir-motion-sensor", "id": "pir1", "top": 32.8, "left": -170.58, "attrs": {} },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": -22.8,
+      "left": 176.6,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 51.95,
+      "left": 163.2,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": 184.8,
+      "left": -113.4,
+      "attrs": { "volume": "0.1" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "pir1:VCC", "esp:5V", "red", [ "v28.8", "h105.6", "v48" ] ],
+    [ "pir1:GND", "esp:GND.1", "black", [ "v0", "h86.14", "v-38.4" ] ],
+    [ "pir1:OUT", "esp:13", "green", [ "v0" ] ],
+    [ "led1:C", "r1:2", "green", [ "v19.2", "h29.2" ] ],
+    [ "r1:1", "esp:GND.2", "green", [ "v0" ] ],
+    [ "led1:A", "esp:14", "green", [ "v0", "h9.6", "v-38.4", "h-230.4", "v124.8" ] ],
+    [ "bz1:2", "esp:12", "green", [ "v9.6", "h38", "v-144" ] ],
+    [ "bz1:1", "esp:GND.1", "green", [ "v0", "h-38.4", "v-86.4", "h-28.8", "v-28.8" ] ]
+  ],
+  "dependencies": {}
+}

@@ -1,0 +1,162 @@
+/*************************************************************
+ * PROJECT UAS MIKROKONTROLER
+ * Judul :
+ * Sistem Alarm Keamanan Rumah Berbasis ESP32
+ * Menggunakan Sensor PIR dan Blynk IoT
+ *************************************************************/
+
+#define BLYNK_TEMPLATE_ID "TMPL6eFdAfQa9"
+#define BLYNK_TEMPLATE_NAME "Smart Home Alarm"
+#define BLYNK_AUTH_TOKEN "y06PgN2sITgvNkc46asxrgSqdpFaprTn"
+
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
+
+//======================================================
+// WIFI
+//======================================================
+char ssid[] = "Wokwi-GUEST";
+char pass[] = "";
+
+//======================================================
+// PIN
+//======================================================
+#define PIR_PIN      13
+#define BUZZER_PIN   12
+#define LED_PIN      14
+
+//======================================================
+// VARIABLE
+//======================================================
+bool alarmArmed = false;
+bool motionState = false;
+
+unsigned long motionCounter = 0;
+
+BlynkTimer timer;
+
+//======================================================
+// SWITCH ARM / DISARM
+//======================================================
+BLYNK_WRITE(V0)
+{
+  alarmArmed = param.asInt();
+
+  if (alarmArmed)
+  {
+    Serial.println("================================");
+    Serial.println("Alarm AKTIF");
+    Serial.println("Menunggu Gerakan...");
+    Serial.println("================================");
+
+    Blynk.virtualWrite(V2, "ALARM AKTIF");
+  }
+  else
+  {
+    Serial.println("================================");
+    Serial.println("Alarm NONAKTIF");
+    Serial.println("================================");
+
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);
+
+    motionState = false;
+
+    Blynk.virtualWrite(V1, 0);
+    Blynk.virtualWrite(V2, "ALARM NONAKTIF");
+  }
+}
+
+//======================================================
+// CEK SENSOR PIR
+//======================================================
+void checkMotion()
+{
+  int pir = digitalRead(PIR_PIN);
+
+  if (!alarmArmed)
+    return;
+
+  //==========================
+  // GERAKAN TERDETEKSI
+  //==========================
+  if (pir == HIGH && !motionState)
+  {
+    motionState = true;
+
+    digitalWrite(LED_PIN, HIGH);
+    digitalWrite(BUZZER_PIN, HIGH);
+
+    motionCounter++;
+
+    Serial.println("--------------------------------");
+    Serial.println("GERAKAN TERDETEKSI!");
+    Serial.print("Jumlah Deteksi : ");
+    Serial.println(motionCounter);
+    Serial.println("--------------------------------");
+
+    // Update Dashboard
+    Blynk.virtualWrite(V1, 255);
+    Blynk.virtualWrite(V2, "GERAKAN TERDETEKSI");
+    Blynk.virtualWrite(V3, motionCounter);
+
+    // Push Notification
+    Blynk.logEvent(
+      "motion_detected",
+      "⚠️ Gerakan terdeteksi oleh Sensor PIR!"
+    );
+  }
+
+  //==========================
+  // AREA KEMBALI AMAN
+  //==========================
+  if (pir == LOW && motionState)
+  {
+    motionState = false;
+
+    digitalWrite(LED_PIN, LOW);
+    digitalWrite(BUZZER_PIN, LOW);
+
+    Serial.println("Area Aman");
+
+    Blynk.virtualWrite(V1, 0);
+    Blynk.virtualWrite(V2, "AMAN");
+  }
+}
+
+//======================================================
+// SETUP
+//======================================================
+void setup()
+{
+  Serial.begin(115200);
+
+  pinMode(PIR_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+
+  digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  Serial.println();
+  Serial.println("Menghubungkan ke Blynk...");
+
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  Serial.println("Blynk Connected");
+
+  Blynk.virtualWrite(V1, 0);
+  Blynk.virtualWrite(V2, "ALARM NONAKTIF");
+  Blynk.virtualWrite(V3, motionCounter);
+
+  timer.setInterval(200L, checkMotion);
+}
+
+//======================================================
+// LOOP
+//======================================================
+void loop()
+{
+  Blynk.run();
+  timer.run();
+}
